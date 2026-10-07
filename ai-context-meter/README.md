@@ -2,7 +2,10 @@
 
 Маленькое окно поверх всех окон с полосками заполнения контекста.
 
-## Запуск
+## Быстрый запуск
+Двойной клик по `start.bat` — сам доустановит `pywinauto` и откроет окно (нужен только Python). `add_autostart.bat` — добавить запуск при входе в Windows.
+
+## Запуск вручную
 1. Python 3.9+ (с tkinter) и `pip install pywinauto`.
 2. `pythonw meter.py` (без консоли) или `python meter.py`.
 3. Перетаскивание — ЛКМ, выход — ПКМ → Exit. Настройки: `%USERPROFILE%\.ai_context_meter.json`.
