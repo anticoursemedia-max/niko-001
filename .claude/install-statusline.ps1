@@ -53,7 +53,8 @@ $sf = Join-Path $dir 'settings.json'
 $cfg = $null
 if (Test-Path $sf) {
     Copy-Item $sf "$sf.bak" -Force
-    $cfg = Get-Content $sf -Raw | ConvertFrom-Json
+    # Read as UTF-8 explicitly: Windows PowerShell 5.1 Get-Content would decode it as ANSI and mangle non-ASCII text.
+    $cfg = [System.IO.File]::ReadAllText($sf, (New-Object System.Text.UTF8Encoding($false))) | ConvertFrom-Json
 }
 if (-not $cfg) { $cfg = [pscustomobject]@{} }
 $script = (Join-Path $dir 'statusline.ps1').Replace('\', '/')
