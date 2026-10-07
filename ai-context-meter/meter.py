@@ -2,8 +2,8 @@
 
 Sources:
   * Claude Code (CLI): read from local transcripts in ~/.claude/projects/**/*.jsonl
-  * Claude.ai / ChatGPT (web): estimated by a Tampermonkey userscript that POSTs
-    to http://127.0.0.1:8765/update (see claude_web_userscript.js)
+  * Desktop apps (Claude, ChatGPT, ...): estimated from the text visible in the
+    app window via Windows UI Automation (needs: pip install pywinauto)
 
 Run:  pythonw meter.py     (no console)   or   python meter.py
 Only the standard library is used (tkinter ships with Python on Windows).
@@ -12,14 +12,19 @@ import json
 import threading
 import time
 import tkinter as tk
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 CONFIG_PATH = Path.home() / ".ai_context_meter.json"
 DEFAULTS = {
-    "port": 8765,
     "refresh_ms": 3000,
-    "stale_seconds": 90,          # hide web rows with no update for this long
+    "stale_seconds": 90,          # hide app rows with no update for this long
+    "scan_seconds": 10,           # how often to scan desktop app windows
+    "chars_per_token": 3.5,       # rough estimate
+    # name shown, exe name (lowercase), context window in tokens
+    "apps": [
+        {"name": "Claude", "exe": "claude.exe", "window": 200000},
+        {"name": "ChatGPT", "exe": "chatgpt.exe", "window": 128000},
+    ],
     "claude_code_window": 200000, # set 1000000 if you use the 1M-context model
     "x": 40,
     "y": 40,
@@ -73,48 +78,41 @@ def read_claude_code(window):
     return None
 
 
-# ---------- web sources (pushed by userscript) ----------
-web_state = {}
+# ---------- desktop apps (Windows UI Automation) ----------
+web_state = {}   # name -> {"used", "window", "ts"}
 web_lock = threading.Lock()
 
 
-def make_handler():
-    class Handler(BaseHTTPRequestHandler):
-        def _cors(self):
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type")
-            self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-
-        def do_OPTIONS(self):
-            self.send_response(204)
-            self._cors()
-            self.end_headers()
-
-        def do_POST(self):
-            try:
-                n = int(self.headers.get("Content-Length", 0))
-                data = json.loads(self.rfile.read(min(n, 10_000)))
-                name = str(data["source"])[:30]
-                entry = {"used": int(data["used"]),
-                         "window": max(1, int(data["window"])),
-                         "ts": time.time()}
-                with web_lock:
-                    web_state[name] = entry
-                self.send_response(204)
-            except (KeyError, ValueError, TypeError):
-                self.send_response(400)
-            self._cors()
-            self.end_headers()
-
-        def log_message(self, *a):
+def scan_apps(cfg):
+    """Background loop: estimate tokens from text visible in each app's windows."""
+    try:
+        from pywinauto import Desktop
+        from pywinauto.application import process_get_path
+    except ImportError:
+        return
+    while True:
+        try:
+            wins = Desktop(backend="uia").windows()
+            for app in cfg["apps"]:
+                chars = 0
+                for w in wins:
+                    try:
+                        exe = Path(process_get_path(w.process_id())).name.lower()
+                        if exe != app["exe"].lower():
+                            continue
+                        for e in w.descendants():
+                            chars += len(e.window_text() or "")
+                    except Exception:
+                        continue
+                if chars:
+                    used = int(chars / cfg["chars_per_token"])
+                    with web_lock:
+                        web_state[app["name"]] = {"used": used,
+                                                  "window": app["window"],
+                                                  "ts": time.time()}
+        except Exception:
             pass
-
-    return Handler
-
-
-def start_server(port):
-    srv = HTTPServer(("127.0.0.1", port), make_handler())  # localhost only
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
+        time.sleep(cfg["scan_seconds"])
 
 
 # ---------- UI ----------
@@ -203,7 +201,7 @@ class Widget:
 
 def main():
     cfg = load_config()
-    start_server(cfg["port"])
+    threading.Thread(target=scan_apps, args=(cfg,), daemon=True).start()
     Widget(cfg).root.mainloop()
 
 
