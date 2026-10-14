@@ -1,0 +1,11 @@
+id,week,day,date,account,platform,idea,hypothesis,hook,persona,cta,status,views,save_rate,link_clicks,installs,purchases,notes
+1,1,Mon,,{account},TikTok,{идея 1},формат A,{хук},{персонаж 1},{CTA},planned,,,,,,
+2,1,Wed,,{account},TikTok,{идея 2},формат B,{хук},{персонаж 1},{CTA},planned,,,,,,
+3,1,Thu,,{account},TikTok,{идея 3},формат A / другой хук,{хук 2},{персонаж 1},{CTA},planned,,,,,,
+4,1,Fri,,{account},TikTok,{идея 1},тот же формат / другая внешность,{хук},{персонаж 2},{CTA},planned,,,,,,
+5,1,Sat,,{account},TikTok,{идея 4},формат C,{хук},{персонаж 1},{CTA},planned,,,,,,
+6,2,Mon,,{account},TikTok,{вариация победителя 1},другой хук,{хук},{победитель},{CTA},planned,,,,,,
+7,2,Wed,,{account},TikTok,{вариация победителя 1},другая внешность,{хук},{персонаж 3},{CTA},planned,,,,,,
+8,2,Thu,,{account},TikTok,{вариация победителя 2},другой CTA,{хук},{победитель},{CTA 2},planned,,,,,,
+9,2,Fri,,{account},TikTok,{новая идея 5},новая гипотеза,{хук},{персонаж 1},{CTA},planned,,,,,,
+10,2,Sat,,{account},TikTok,{новая идея 6},новая гипотеза,{хук},{персонаж 2},{CTA},planned,,,,,,
